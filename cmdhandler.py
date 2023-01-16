@@ -3,56 +3,77 @@ from linebot.models import (MessageEvent, TextMessage, TextSendMessage,
                             CarouselColumn, URIAction)
 from replit import db
 
+
 #====== COMMAND HANDLER ======
 def handle_commands(event, linebotapi):
   msg = event.message.text
-  if not msg.startswith("!"):
-    return None
 
   command = msg.split()[0][1:]
   command_subset = ' '.join(msg.split()[1:])
   commands = {
+    'help': cmd_help,
     'echo': cmd_echo,
+    'counsel': cmd_counseling,
     'counseling': cmd_counseling,
-    'admin': cmd_admin
+    'admin': cmd_admin,
+    'counselor': cmd_counselor,
+    'counselors': cmd_counselor
   }
   if command in commands:
     return commands[command](event, command_subset, linebotapi)
   else:
-    linebotapi.reply_message(event.reply_token,
-                             TextSendMessage(text='Invalid command'))
+    linebotapi.reply_message(
+      event.reply_token,
+      TextSendMessage(
+        text='Invalid command.\n!help to list all available commands'))
 
-#=============================================    
-#=============== ECHO COMMAND ================
-def cmd_echo(event, command_subset, linebotapi):
-  linebotapi.reply_message(event.reply_token,
-                           TextSendMessage(text=command_subset))
 
 #=============================================
-#============ COUNSELING COMMAND =============
+#=============== HELP COMMAND ================ IN DEVELOPMENT
+def cmd_help(event, command_subset, linebotapi):
+  default_cmd_dict = {
+    'echo': 'Echo your message after the command',
+    'counsel': 'List all counselors (alias: !counseling)'
+  }
+  admin_cmd_dict = {
+    'admin': 'Access to admin commands',
+    'counselor': 'manage counselor list'
+  }
+  mod_cmd_dict = {
+    #To be added mod role maybe? maybe not? who knows?
+  }
+  #Do admin check. send admin_cmd_dict too if is admin
+  linebotapi.push_message(
+    event.source.user_id,
+    TextSendMessage(
+      text=
+      "Available commands:\n!echo\n!counsel\n\n\nYou are looking for help. I know, We're also looking for help. If you want to help, join us at PROBES: https://discord.gg/thZt9g9ZU4"
+    ))
+
+
+#=============================================
+#=============== ECHO COMMAND ================
+def cmd_echo(event, command_subset, linebotapi):
+  linebotapi.push_message(event.source.user_id,
+                          TextSendMessage(text=command_subset))
+
+
+#=============================================
+#============ COUNSELING COMMAND ============= IN DEVELOPMENT
 def cmd_counseling(event, command_subset, linebotapi):
-  data = [{
-    'name': 'raisal',
-    'LINEID': 'raisalgenre2001'
-  }, {
-    'name': 'leofardi',
-    'LINEID': 'iniidleofardi'
-  }]
+  counselors = db['counselors']
+  
   carousel_template = CarouselTemplate(columns=[
-    CarouselColumn(text='Name: ' + data[0]['name'],
+    CarouselColumn(text='Name: ' + item['name'],
                    actions=[
-                     URIAction(label='LINE ID',
-                               uri='line://ti/p/~' + data[0]['LINEID'])
-                   ]),
-    CarouselColumn(text='Name: ' + data[1]['name'],
-                   actions=[
-                     URIAction(label='LINE ID',
-                               uri='line://ti/p/~' + data[1]['LINEID'])
-                   ])
+                     URIAction(label='Contact',
+                               uri='line://ti/p/~' + item['LineID'])
+                   ]) for item in counselors
   ])
   template_message = TemplateSendMessage(alt_text='Carousel template',
                                          template=carousel_template)
   linebotapi.reply_message(event.reply_token, template_message)
+
 
 #=============================================
 #============== ADMIN COMMANDS ===============
@@ -73,23 +94,38 @@ def cmd_admin(event, command_subset, linebotapi):
       linebotapi.reply_message(
         event.reply_token,
         TextSendMessage(
-          text='Please type your admin command\n!admin <command> <arguments>'))
+          text=
+          'Please type your admin command\n!admin <command> <arguments>\n"!admin help" for help on admin commands'
+        ))
       return
 
     #split input to admin command and args
     command = command_subset.split()[0]
     args = command_subset.split()[1:]
 
-    
-  #----------------------------
-  #  !admin add <name> <userId>
-  #  Give admin privilege to <userId> with name <name>
-    if command == "add":
+    #----------------------------
+    #  !admin help
+    #  help command, obviously
+    if command == "help":
+      #list admin commands here with "<command>: <desciption>"
+      commands_dict = {
+        'list': "List all admins",
+        'add': "Give admin privilege to a user",
+        'remove': "Remove admin privilege from a user"
+      }
       linebotapi.reply_message(event.reply_token,
-                               TextSendMessage(text="Adding user..."))
+                               TextSendMessage(text=commands_dict))
 
+    #----------------------------
+    #  !admin add <name> <userId>
+    #  Give admin privilege to <userId> with name <name>
+    if command == "add":
+      admins.append({'name': args[0], 'userId': args[1]})
+      linebotapi.reply_message(
+        event.reply_token,
+        TextSendMessage(text="Added " + args[0] + " as an admin (UID: " +
+                        args[1] + ')'))
 
-      
   #----------------------------
   #  !admin remove <name>
   #  Remove <name> from admin list.
@@ -137,3 +173,62 @@ def cmd_admin(event, command_subset, linebotapi):
     else:
       linebotapi.reply_message(event.reply_token,
                                TextSendMessage(text="Invalid admin command"))
+
+
+#=============================================
+#============ COUNSELOR COMMANDS =============
+
+
+def cmd_counselor(event, command_subset, linebotapi):
+  admins = db["admins"]
+  counselors = db["counselors"]
+
+  #Admin privilege check
+  if next((item for item in admins if item["userId"] == event.source.user_id),
+          False) == False:
+    linebotapi.reply_message(
+      event.reply_token,
+      TextSendMessage(
+        text='Anda tidak memiliki izin untuk menggunakan perintah ini'))
+
+  else:
+    #Check command was entered or not
+    if not command_subset:
+      linebotapi.reply_message(
+        event.reply_token,
+        TextSendMessage(
+          text=
+          'Please type your command\n!counselor <command> <arguments>\n"!counselor help" for help on counselor management commands'
+        ))
+      return
+
+    #split input to admin command and args
+    command = command_subset.split()[0]
+    args = command_subset.split()[1:]
+
+    #----------------------------
+    #  !counselor help
+    #  help command, obviously
+    if command == "help":
+      #list admin commands here with "<command>: <desciption>"
+      commands_dict = {
+        'list': "List all counselors",
+        'add': "Add user as a counselor",
+        'remove': "Remove user from counselor list"
+      }
+      #-------> To do <-------
+      #Need better message formatting
+      linebotapi.reply_message(event.reply_token,
+                               TextSendMessage(text=commands_dict))
+
+      
+    #----------------------------
+    #  !counselor list
+    #  List all counselors
+    elif command == "list":
+      linebotapi.push_message(
+        event.source.user_id,
+        TextSendMessage(text="List of Counselors:\n" + '\n'.join([
+          '{:<20s} {:}'.format(str(element['name']), str(element['LineID']))
+          for element in counselors
+        ])))

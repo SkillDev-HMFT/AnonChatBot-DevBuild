@@ -34,19 +34,6 @@ dictConfig({
   }
 })
 
-db["admins"] = [{
-  'name': 'Raisal',
-  'userId': 'U524c29c53c53057bae735bab657cf07c'},
-                {
-  'name': 'Airi',
-  'userId': 'U524c29c53c53057bae735bab657cf07c'},
-                {
-  'name': 'Vinya',
-  'userId': 'U524c29c53c53057bae735bab657cf07c'},
-                {
-  'name': 'Mike',
-  'userId': 'U524c29c53c53057bae735bab657cf07c'},
-               ]
 #App Init
 app = Flask(__name__)
 
