@@ -9,8 +9,6 @@ from linebot.exceptions import *
 from printjson import printjson
 from cmdhandler import *
 
-from replit import db
-
 #Logging
 from logging.config import dictConfig
 
@@ -90,8 +88,7 @@ def testSend(to, message):
 Leo = os.environ['IdLeofardi']
 Raisal = os.environ['IdRaisal']
 
-
-# Simple Echo
+# Message handling
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
   if event.message.text.startswith('!'):

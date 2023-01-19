@@ -1,7 +1,7 @@
 from linebot.models import (MessageEvent, TextMessage, TextSendMessage,
-                            TemplateSendMessage, CarouselTemplate,
+                            TemplateSendMessage, CarouselTemplate, FlexSendMessage,
                             CarouselColumn, URIAction)
-from replit import db
+from db import *
 
 
 #====== COMMAND HANDLER ======
@@ -19,6 +19,7 @@ def handle_commands(event, linebotapi):
     'counselor': cmd_counselor,
     'counselors': cmd_counselor
   }
+  
   if command in commands:
     return commands[command](event, command_subset, linebotapi)
   else:
@@ -26,7 +27,6 @@ def handle_commands(event, linebotapi):
       event.reply_token,
       TextSendMessage(
         text='Invalid command.\n!help to list all available commands'))
-
 
 #=============================================
 #=============== HELP COMMAND ================ IN DEVELOPMENT
@@ -47,7 +47,7 @@ def cmd_help(event, command_subset, linebotapi):
     event.source.user_id,
     TextSendMessage(
       text=
-      "Available commands:\n!echo\n!counsel\n\n\nYou are looking for help. I know, We're also looking for help. If you want to help, join us at PROBES: https://discord.gg/thZt9g9ZU4"
+      "Available commands:\n!echo\n!counsel\n\nYou are looking for help. I know, we're also looking for help. If you want to help, join us at PROBES: https://discord.gg/thZt9g9ZU4"
     ))
 
 
@@ -62,19 +62,61 @@ def cmd_echo(event, command_subset, linebotapi):
 #============ COUNSELING COMMAND ============= IN DEVELOPMENT
 def cmd_counseling(event, command_subset, linebotapi):
   counselors = db['counselors']
-  
-  carousel_template = CarouselTemplate(columns=[
-    CarouselColumn(text='Name: ' + item['name'],
-                   actions=[
-                     URIAction(label='Contact',
-                               uri='line://ti/p/~' + item['LineID'])
-                   ]) for item in counselors
-  ])
-  template_message = TemplateSendMessage(alt_text='Carousel template',
-                                         template=carousel_template)
+
+  contents = []
+  for item in counselors:
+      content = {
+          "type": "bubble",
+          "size": "kilo",
+          "body": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                  {
+                      "type": "text",
+                      "text": item['name'],
+                      "weight": "bold",
+                      "size": "xxl",
+                      "align": "center",
+                      "color": "#6b7c2c",
+                      "margin": "35px"
+                  },
+                  {
+                      "type": "text",
+                      "text": "Counselor",
+                      "style": "italic",
+                      "align": "center",
+                      "size": "lg",
+                      "color": "#878c40"
+                  }
+              ],
+              "height": "150px",
+              "backgroundColor": "#ece7c2"
+          },
+          "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                  {
+                      "type": "button",
+                      "action": {
+                          "type": "uri",
+                          "label": "CONTACT",
+                          "uri": f"line://ti/p/~{item['LineID']}"
+                      }
+                  }
+              ]
+          }
+      }
+      contents.append(content)
+
+  carousel= {
+        "type": "carousel",
+        "contents": contents
+    }
+  template_message = FlexSendMessage(alt_text='Carousel Template', contents=carousel)
   linebotapi.reply_message(event.reply_token, template_message)
-
-
+  
 #=============================================
 #============== ADMIN COMMANDS ===============
 def cmd_admin(event, command_subset, linebotapi):
