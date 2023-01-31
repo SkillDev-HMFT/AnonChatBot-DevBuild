@@ -104,9 +104,9 @@ def handle_message(event):
     handle_commands(event, line_bot_api)
 
   else:
-    # if event.source.type == 'user':
-    pass
-    # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=event.message.text))
+    if event.source.type == 'user':
+    # pass
+      line_bot_api.reply_message(event.reply_token, text_message)
     
   return 'OK'
 
