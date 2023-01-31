@@ -24,7 +24,8 @@ def handle_commands(event, linebotapi):
     'counsel': cmd_counseling,
     'counseling': cmd_counseling,
     'menu': cmd_menu,
-    'credits': cmd_credits
+    'credits': cmd_credits,
+    'credit': cmd_credits,
   }
   admin_commands={
     'forward': cmd_forward,
@@ -51,14 +52,17 @@ def handle_commands(event, linebotapi):
 #=============== COMMAND DICTIONARY===========
 default_cmd_dict = {
   'echo': ' <message>\nEcho your message after the command',
-  'counsel': '\nList all counselors \n(alias: !counseling)'
+  'credit': '\nCredits'
 }
 
 admin_cmd_dict = {
   'admin': ' <admin_command>\nAccess to admin commands',
   'manage': '\nmanage counselor list \n(alias: !management)'
 }
-  
+
+services_cmd_dict = {
+  'counsel': '\nList all counselors \n(alias: !counseling)'
+}
 mod_cmd_dict = {
   #To be added mod role maybe? maybe not? who knows?
 }  
@@ -73,6 +77,9 @@ def cmd_help(event, command_subset, linebotapi):
   cmd_list = "Available commands:"
   for key, value in default_cmd_dict.items():
     cmd_list+="\n\n• !"+key+value
+  for key, value in services_cmd_dict.items():
+    cmd_list+="\n\n• !"+key+value
+  
     
   #Do admin check. send admin_cmd_dict too if is admin 
   if next((item for item in admins if item["userId"] == event.source.user_id), True) != True:
@@ -103,7 +110,7 @@ def cmd_menu(event, command_subset, linebotapi):
     cmd_list += "\n\n!"+key+value
       
   #Message for !help
-  linebotapi.reply_message(event.reply_token, TextSendMessage(text=cmd_list+"\n\nJoin PID gaes xixixi"))
+  linebotapi.reply_message(event.reply_token, TextSendMessage(text=cmd_list, quick_reply = QuickReply(items=[QuickReplyButton(action=MessageAction(label="Counselor", text="!counsel"))])))
   
 #=============================================
 #============ COUNSELING COMMAND ============= IN DEVELOPMENT
@@ -167,9 +174,7 @@ def cmd_counseling(event, command_subset, linebotapi):
         "type": "carousel",
         "contents": contents
     }
-  template_message = FlexSendMessage(alt_text='Silakan pilih counsel.', text="Silakan pilih.", contents=carousel, quick_reply=QuickReply(items=[
-                                 QuickReplyButton(action=MessageAction(label="Counselor", text="!counsel")),
-                                 QuickReplyButton(action=MessageAction(label="Help", text="!help"))]))
+  template_message = FlexSendMessage(alt_text='Silakan pilih counsel.', text="Silakan pilih.", contents=carousel)
   send_message(event, TextSendMessage(text="Silakan pilih counsel di bawah ini."), linebotapi)
   send_message(event, template_message, linebotapi)
   
