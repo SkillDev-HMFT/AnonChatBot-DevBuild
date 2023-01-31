@@ -9,7 +9,7 @@ from linebot.exceptions import *
 from printjson import printjson
 from cmdhandler import *
 
-#Logging
+# Logging
 from logging.config import dictConfig
 
 dictConfig({
@@ -32,10 +32,10 @@ dictConfig({
   }
 })
 
-#App Init
+# App Init
 app = Flask(__name__)
 
-#Get from environment secrets
+# Get from environment secrets
 ChAccToken = os.environ['CHANNEL_ACCESS_TOKEN']
 ChSecret = os.environ['CHANNEL_SECRET']
 # Channel Access Token
@@ -43,14 +43,12 @@ line_bot_api = LineBotApi(ChAccToken)
 # Channel Secret
 handler = WebhookHandler(ChSecret)
 
-
 #for pinging
 @app.route('/')
 def home():
-  return "I'm alive"
+  return "Samlekom"
 
-
-# 監聽所有來自 /callback 的 Post Request
+# callback Post Request
 @app.route("/callback", methods=['POST'])
 def callback():
   # get X-Line-Signature header value
@@ -72,7 +70,6 @@ def callback():
     abort(400)
   return 'OK'
 
-
 #Send message <to> = userID <message> = message to send
 @app.route('/testSend/<to>/<message>', methods=['GET'])
 def testSend(to, message):
@@ -83,7 +80,6 @@ def testSend(to, message):
     abort(400)
   return 'OK'
 
-
 #=====Test ID======
 Leo = os.environ['IdLeofardi']
 Raisal = os.environ['IdRaisal']
@@ -91,11 +87,28 @@ Raisal = os.environ['IdRaisal']
 # Message handling
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+  command = {"Menu": "!menu", "Help": "!help"}
+  actions = []
+  text = "Selamat datang! Silakan pilih perintah berikut."
+
+  for key, value in command.items():
+    actions.append(MessageAction(label=key, text=value))
+    
+  template = ButtonsTemplate(title='HMFT Official Account',
+                            text=text,
+                            actions=actions)
+  
+  text_message = TemplateSendMessage(alt_text='Selamat datang!', template=template)
+  
   if event.message.text.startswith('!'):
     handle_commands(event, line_bot_api)
 
+  else:
+    # if event.source.type == 'user':
+    pass
+    # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=event.message.text))
+    
   return 'OK'
-
 
 if __name__ == "__main__":
   port = int(os.environ.get('PORT', 5000))
