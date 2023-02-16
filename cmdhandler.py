@@ -1,22 +1,23 @@
 from linebot.models import *
 from replit import db
 import random
-from txt_formatter import *
+
 
 #=======SEND MESSAGE==========
 def send_message(event, message, linebotapi):
-    if event.source.type == 'group':
-      linebotapi.push_message(event.source.group_id, message)
-    elif event.source.type == 'user':
-      linebotapi.push_message(event.source.user_id, message)
-    elif event.source.type == 'room':
-      linebotapi.push_message(event.source.room_id, message)
+  if event.source.type == 'group':
+    linebotapi.push_message(event.source.group_id, message)
+  elif event.source.type == 'user':
+    linebotapi.push_message(event.source.user_id, message)
+  elif event.source.type == 'room':
+    linebotapi.push_message(event.source.room_id, message)
+
 
 #====== COMMAND HANDLER ======
 def handle_commands(event, linebotapi):
   msg = event.message.text
 
-  command = msg.split()[0][1:]
+  command = msg.split()[0][1:].lower()
   command_subset = ' '.join(msg.split()[1:])
   commands = {
     'help': cmd_help,
@@ -28,7 +29,7 @@ def handle_commands(event, linebotapi):
     'credit': cmd_credits,
     'userid': cmd_userid
   }
-  admin_commands={
+  admin_commands = {
     'forward': cmd_forward,
     'admin': cmd_admin,
     'management': cmd_counselor,
@@ -36,12 +37,14 @@ def handle_commands(event, linebotapi):
   }
 
   #Load admins and mods
-  admins = db["admins"] #Load admin list
-  mods = db["mods"] #Load mod list
-  
+  admins = db["admins"]  #Load admin list
+  mods = db["mods"]  #Load mod list
+
   if command in commands:
     return commands[command](event, command_subset, linebotapi)
-  elif next((item for item in admins if item["userId"] == event.source.user_id), True) != True and command in admin_commands:
+  elif next(
+    (item for item in admins if item["userId"] == event.source.user_id),
+      True) != True and command in admin_commands:
     return admin_commands[command](event, command_subset, linebotapi)
   else:
     linebotapi.reply_message(
@@ -49,149 +52,182 @@ def handle_commands(event, linebotapi):
       TextSendMessage(
         text='Invalid command.\n!help to list all available commands'))
 
+
 #=============================================
 #=============== COMMAND DICTIONARY===========
 default_cmd_dict = {
   'echo': ' <message>\nEcho your message after the command',
-  'credit': '\nCredits'
+  'credit': '\nCredits',
+  'userid': '\nReturn your Unique UserID'
 }
 
 admin_cmd_dict = {
   'admin': ' <admin_command>\nAccess to admin commands',
-  'manage': '\nmanage counselor list \n(alias: !management)'
+  'manage': '\nmanage counselor list\n(alias: !management)'
 }
 
 services_cmd_dict = {
-  'counsel': '\nList all counselors \n(alias: !counseling)'
+  'counsel':
+  '\nUntuk melihat daftar konselor yang kamu inginkan!\n(alias: !counseling)'
 }
 mod_cmd_dict = {
   #To be added mod role maybe? maybe not? who knows?
-}  
+}
+
 
 #=============================================
 #=============== HELP COMMAND ================ IN DEVELOPMENT
 def cmd_help(event, command_subset, linebotapi):
-  admins = db["admins"] #Load admin list
-  mods = db["mods"] #Load mod list
+  admins = db["admins"]  #Load admin list
+  mods = db["mods"]  #Load mod list
 
   #Create command list
   cmd_list = "Available commands:"
   for key, value in default_cmd_dict.items():
-    cmd_list+="\n\n• !"+key+value
+    cmd_list += "\n\n• !" + key + value
   for key, value in services_cmd_dict.items():
-    cmd_list+="\n\n• !"+key+value
-  
-    
-  #Do admin check. send admin_cmd_dict too if is admin 
-  if next((item for item in admins if item["userId"] == event.source.user_id), True) != True:
+    cmd_list += "\n\n• !" + key + value
+
+  #Do admin check. send admin_cmd_dict too if is admin
+  if next((item for item in admins if item["userId"] == event.source.user_id),
+          True) != True:
     cmd_list += "\n\nAdmin commands:"
     for key, value in admin_cmd_dict.items():
-      cmd_list += "\n\n• !"+key+value     
+      cmd_list += "\n\n• !" + key + value
 
   #Do mod check. send mod_cmd_dict too if is mod or admin
-  if next((item for item in admins if item["userId"] == event.source.user_id), True) != True or next((item for item in mods if item["userId"] == event.source.user_id), True) != True:
-    cmd_list+="\n\nMod commands:"
+  if next((item for item in admins if item["userId"] == event.source.user_id),
+          True) != True or next(
+            (item for item in mods if item["userId"] == event.source.user_id),
+            True) != True:
+    cmd_list += "\n\nMod commands:"
     for key, value in mod_cmd_dict.items():
-      cmd_list+="\n\n!"+key+value
-      
+      cmd_list += "\n\n!" + key + value
+
   #Message for !help
-  linebotapi.reply_message(event.reply_token, TextSendMessage(text=cmd_list+"\n\nYou are looking for help. I know, we're also looking for help. If you want to help, join us at PROBES: https://discord.gg/thZt9g9ZU4"))
+  linebotapi.reply_message(
+    event.reply_token,
+    TextSendMessage(
+      text=cmd_list +
+      "\n\nYou are looking for help. I know, we're also looking for help. If you want to help, join us at PROBES: https://discord.gg/thZt9g9ZU4"
+    ))
+
 
 #=============================================
 #=============== ECHO COMMAND ================
 def cmd_echo(event, command_subset, linebotapi):
-  linebotapi.reply_message(event.reply_token, TextSendMessage(text=command_subset))
-  
-#=============================================
-#=============== MENU COMMAND ================  
-def cmd_menu(event, command_subset, linebotapi):
-  #Create service list
-  cmd_list = "Available services:"
-  for key, value in services_cmd_dict.items():
-    cmd_list += "\n\n!"+key+value
-      
-  #Message for !help
-  linebotapi.reply_message(event.reply_token, TextSendMessage(text=cmd_list, quick_reply = QuickReply(items=[QuickReplyButton(action=MessageAction(label="Counselor", text="!counsel"))])))
+  linebotapi.reply_message(event.reply_token,
+                           TextSendMessage(text=command_subset))
+
 
 #=============================================
-#=============== USER ID ECHO ================ 
+#=============== MENU COMMAND ================
+def cmd_menu(event, command_subset, linebotapi):
+  #Create service list
+  msg = "Available services:\n\n"
+  msg_dict = {
+    'counsel':
+    '*Peer Counseling*\nPeer Counseling merupakan cara kami mendengarkan kamu yg ingin berkeluh kesah tentang apapun.\n'
+  }
+
+  for key, value in services_cmd_dict.items():
+    msg += f"{msg_dict[key]}\nKirim: !{key}"
+
+  #QuickReply Button
+  linebotapi.reply_message(
+    event.reply_token,
+    TextSendMessage(
+      text=msg,
+      quick_reply=QuickReply(items=[
+        QuickReplyButton(
+          action=MessageAction(label="Peer Counseling", text="!counsel"))
+      ])))
+
+
+#=============================================
+#=============== USER ID ECHO ================
 def cmd_userid(event, command_subset, linebotapi):
-  linebotapi.reply_message(event.reply_token, TextSendMessage(text=event.source.user_id))
-  
+  linebotapi.reply_message(event.reply_token,
+                           TextSendMessage(text=event.source.user_id))
+
 
 #=============================================
 #============ COUNSELING COMMAND ============= IN DEVELOPMENT
 def cmd_counseling(event, command_subset, linebotapi):
   counselors = db['counselors']
   random.shuffle(counselors)
-  
+
   contents = []
   for item in counselors:
-      content = {
+    content = {
       "type": "bubble",
       "size": "nano",
       "body": {
-        "type": "box",
-        "layout": "vertical",
-        "contents": [
-          {
-            "type": "text",
-            "text": item["name"],
-            "weight": "bold",
-            "size": "xl",
-            "align": "center",
-            "color": "#6b7c2c",
-            "margin": "15px"
-          },
-          {
-            "type": "text",
-            "text": "Counselor",
-            "style": "italic",
-            "align": "center",
-            "size": "md",
-            "color": "#878c40"
-          }
-        ],
-        "height": "100px",
-        "backgroundColor": "#ece7c2"
+        "type":
+        "box",
+        "layout":
+        "vertical",
+        "contents": [{
+          "type": "text",
+          "text": item["name"],
+          "weight": "bold",
+          "size": "xl",
+          "align": "center",
+          "color": "#6b7c2c",
+          "margin": "15px"
+        }, {
+          "type": "text",
+          "text": "Counselor",
+          "style": "italic",
+          "align": "center",
+          "size": "md",
+          "color": "#878c40"
+        }],
+        "height":
+        "100px",
+        "backgroundColor":
+        "#ece7c2"
       },
       "footer": {
-        "type": "box",
-        "layout": "vertical",
-        "contents": [
-          {
-            "type": "text",
-            "text": "CONTACT",
-            "color": "#428fd6",
-            "align": "center",
-            "margin": "5px",
-            "action": {
-              "type": "uri",
-              "label": "action",
-              "uri": f"line://ti/p/~{item['LineID']}"
-            }
+        "type":
+        "box",
+        "layout":
+        "vertical",
+        "contents": [{
+          "type": "text",
+          "text": "CONTACT",
+          "color": "#428fd6",
+          "align": "center",
+          "margin": "5px",
+          "action": {
+            "type": "uri",
+            "label": "action",
+            "uri": f"line://ti/p/~{item['LineID']}"
           }
-        ],
-        "height": "50px"
+        }],
+        "height":
+        "50px"
       }
     }
-      contents.append(content)
-  
-  carousel= {
-        "type": "carousel",
-        "contents": contents
-    }
-  template_message = FlexSendMessage(alt_text='Silakan pilih counsel.', text="Silakan pilih.", contents=carousel)
-  send_message(event, TextSendMessage(text="Silakan pilih counsel di bawah ini."), linebotapi)
+    contents.append(content)
+
+  carousel = {"type": "carousel", "contents": contents}
+  template_message = FlexSendMessage(alt_text='Silakan pilih counsel.',
+                                     text="Silakan pilih.",
+                                     contents=carousel)
+  send_message(event,
+               TextSendMessage(text="Silakan pilih counsel di bawah ini."),
+               linebotapi)
   send_message(event, template_message, linebotapi)
-  
+
   # linebotapi.reply_message(event.reply_token, TextSendMessage(text="Silakan pilih counsel di bawah ini."))
   # linebotapi.push_message(event.source.group_id, TextSendMessage(text=template_message)))
-  
+
+
 #================== ADMIN ====================
 #============== ADMIN COMMANDS ===============
 def cmd_admin(event, command_subset, linebotapi):
-
+  admins = db["admins"]
   #Check command was entered or not
   if not command_subset:
     linebotapi.reply_message(
@@ -212,17 +248,19 @@ def cmd_admin(event, command_subset, linebotapi):
   if command == "help":
     #list admin commands here with "<command>: <desciption>"
     commands_dict = {
-      'list': "List all admins",
-      'add': "Give admin privilege to a user",
-      'remove': "Remove admin privilege from a user"
+      'list': "\nList all admins",
+      'add': " <name> <UserID>\nGive admin privilege to a user",
+      'remove': "<name>\nRemove admin privilege from a user"
     }
-    linebotapi.reply_message(event.reply_token,
-                             TextSendMessage(text=commands_dict))
+    msg = 'Available Admin Commands:\n'
+    for key, value in commands_dict.items():
+      msg += "\n!" + key + value
+    send_message(event, TextSendMessage(text=msg), linebotapi)
 
   #----------------------------
   #  !admin add <name> <userId>
   #  Give admin privilege to <userId> with name <name>
-  if command == "add":
+  elif command == "add":
     admins.append({'name': args[0], 'userId': args[1]})
     linebotapi.reply_message(
       event.reply_token,
@@ -310,7 +348,7 @@ def cmd_counselor(event, command_subset, linebotapi):
       #Need better message formatting
       linebotapi.reply_message(event.reply_token,
                                TextSendMessage(text=commands_dict))
-      
+
     #----------------------------
     #  !counselor list
     #  List all counselors
@@ -322,13 +360,19 @@ def cmd_counselor(event, command_subset, linebotapi):
           for element in counselors
         ])))
 
+
 #=============================================
 #============ FORWARD COMMAND ================ IN DEVELOPMENT
 def cmd_forward(event, command_subset, linebotapi):
   if event.source.type != 'user':
-    linebotapi.reply_message(event.reply_token, TextSendMessage(text="Perintah ini tidak dapat digunakan di grup atau MPC."))
+    linebotapi.reply_message(
+      event.reply_token,
+      TextSendMessage(
+        text="Perintah ini tidak dapat digunakan di grup atau MPC."))
+
 
 #=============================================
 #============ CREDITS ========================
 def cmd_credits(event, command_subset, linebotapi):
-  linebotapi.reply_message(event.reply_token, TextSendMessage(text="Izaru, damnnotplaywell, ScPz"))
+  linebotapi.reply_message(
+    event.reply_token, TextSendMessage(text="Izaru, damnnotplaywell, ScPz"))
