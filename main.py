@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, abort
 
+
 from linebot import (LineBotApi, WebhookHandler)
 from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import *
@@ -79,10 +80,6 @@ def testSend(to, message):
     app.logger.warning("Send message fail", e)
     abort(400)
   return 'OK'
-
-#=====Test ID======
-Leo = os.environ['IdLeofardi']
-Raisal = os.environ['IdRaisal']
 
 # Message handling
 @handler.add(MessageEvent, message=TextMessage)
