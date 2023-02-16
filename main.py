@@ -7,8 +7,11 @@ from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import *
 from linebot.exceptions import *
 
+#Our scripts
 from printjson import printjson
 from cmdhandler import *
+from scripts.msg.msgbuilder import *
+
 
 # Logging
 from logging.config import dictConfig
@@ -81,21 +84,17 @@ def testSend(to, message):
     abort(400)
   return 'OK'
 
+@handler.add(FollowEvent)
+def handle_newfollow(event):
+  line_bot_api.reply_message(event.reply_token, msg_defaultResponse())
+    
+  return 'OK'
+
+  
 # Message handling
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-  command = {"Menu": "!menu", "Help": "!help"}
-  actions = []
-  text = "Selamat datang! Silakan pilih perintah berikut."
-
-  for key, value in command.items():
-    actions.append(MessageAction(label=key, text=value))
-    
-  template = ButtonsTemplate(title='HMFT Official Account',
-                            text=text,
-                            actions=actions)
   
-  text_message = TemplateSendMessage(alt_text='Selamat datang!', template=template)
   
   if event.message.text.startswith('!'):
     handle_commands(event, line_bot_api)
@@ -103,7 +102,7 @@ def handle_message(event):
   else:
     if event.source.type == 'user':
     # pass
-      line_bot_api.reply_message(event.reply_token, text_message)
+      line_bot_api.reply_message(event.reply_token, msg_defaultResponse())
     
   return 'OK'
 
