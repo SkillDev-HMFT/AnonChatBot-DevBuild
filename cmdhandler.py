@@ -26,6 +26,7 @@ def handle_commands(event, linebotapi):
     'menu': cmd_menu,
     'credits': cmd_credits,
     'credit': cmd_credits,
+    'userid': cmd_userid
   }
   admin_commands={
     'forward': cmd_forward,
@@ -111,7 +112,13 @@ def cmd_menu(event, command_subset, linebotapi):
       
   #Message for !help
   linebotapi.reply_message(event.reply_token, TextSendMessage(text=cmd_list, quick_reply = QuickReply(items=[QuickReplyButton(action=MessageAction(label="Counselor", text="!counsel"))])))
+
+#=============================================
+#=============== USER ID ECHO ================ 
+def cmd_userid(event, command_subset, linebotapi):
+  linebotapi.reply_message(event.reply_token, TextSendMessage(text=event.source.user_id))
   
+
 #=============================================
 #============ COUNSELING COMMAND ============= IN DEVELOPMENT
 def cmd_counseling(event, command_subset, linebotapi):
